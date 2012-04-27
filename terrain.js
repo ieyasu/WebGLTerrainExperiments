@@ -46,6 +46,116 @@
         return { type: "geometry", primitive: "triangles",
                  positions: pos, normals: norm, indices: ind };
     }
+
+    /* 3-element vector operating on a portion of an array.
+     */
+    B.Vec3 = function(ary, offset) {
+        this.ary = ary;
+        this.off = offset;
+    };
+    B.Vec3.prototype.x = function() { return this.ary[this.off]; }
+    B.Vec3.prototype.y = function() { return this.ary[this.off + 1]; }
+    B.Vec3.prototype.z = function() { return this.ary[this.off + 2]; }
+    B.Vec3.prototype.add = function(v) {
+        return new B.Vec3([this.x() + v.x(),
+                           this.y() + v.y(),
+                           this.z() + v.z()], 0);
+    };
+    B.Vec3.prototype.sub = function(v) {
+        return new B.Vec3([this.x() - v.x(),
+                           this.y() - v.y(),
+                           this.z() - v.z()], 0);
+    };
+    B.Vec3.prototype.mul = function(f) {
+        return new B.Vec3([this.x() * f,
+                           this.y() * f,
+                           this.z() * f], 0);
+    };
+    B.Vec3.prototype.addEq = function(v) {
+        this.ary[this.off    ] += v.x();
+        this.ary[this.off + 1] += v.y();
+        this.ary[this.off + 2] += v.z();
+        return this;
+    };
+    B.Vec3.prototype.subEq = function(v) {
+        this.ary[this.off    ] -= v.x();
+        this.ary[this.off + 1] -= v.y();
+        this.ary[this.off + 2] -= v.z();
+        return this;
+    };
+    B.Vec3.prototype.mulEq = function(f) {
+        this.ary[this.off    ] *= f;
+        this.ary[this.off + 1] *= f;
+        this.ary[this.off + 2] *= f;
+        return this;
+    };
+
+    B.Vec3.prototype.normal = function() {
+        return this.mul(1.0 / this.magnitude());
+    };
+    B.Vec3.prototype.normalize = function() {
+        this.mulEq(1.0 / this.magnitude());
+        return this;
+    };
+    B.Vec3.prototype.magnitude = function() {
+        var x = this.x(), y = this.y(), z = this.z();
+        return Math.sqrt(x * x + y * y + z * z);
+    };
+    B.Vec3.prototype.dot = function(v) {
+        return this.x() * v.x() + this.y() * v.y() + this.z() * v.z();
+    };
+    B.Vec3.prototype.cross = function(v) {
+        return new B.Vec3([this.y() * v.z() - this.z() * v.y(),
+                           this.z() * v.x() - this.x() * v.z(),
+                           this.x() * v.y() - this.y() * v.x()], 0);
+    };
+
+    B.Vec3.prototype.rho = B.Vec3.prototype.magnitude;
+    B.Vec3.prototype.theta = function() {
+        return Math.atan2(this.y(), this.x());
+    };
+    B.Vec3.prototype.phi = function() {
+        var rho = this.rho();
+        return (rho == 0.0) ? 0.0 : Math.acos(this.z() / rho);
+    };
+
+    B.Vec3.prototype.rotX = function(deg) {
+        var rad = deg * (Math.PI / 180.0);
+        var y = this.y(), z = this.z(), cr = Math.cos(rad), sr = Math.sin(rad);
+        var newY = y * cr - z * sr;
+        var newZ = y * sr + z * cr;
+        this.ary[this.off + 1] = newY;
+        this.ary[this.off + 2] = newZ;
+        return this;
+    };
+    B.Vec3.prototype.rotY = function(deg) {
+        var rad = deg * (Math.PI / 180.0);
+        var x = this.x(), z = this.z(), cr = Math.cos(rad), sr = Math.sin(rad);
+        var newX = z * sr + x * cr;
+        var newZ = z * cr - x * sr;
+        this.ary[this.off    ] = newX;
+        this.ary[this.off + 2] = newZ;
+        return this;
+    };
+    B.Vec3.prototype.rotZ = function(deg) {
+        var rad = deg * (Math.PI / 180.0);
+        var x = this.x(), y = this.y(), cr = Math.cos(rad), sr = Math.sin(rad);
+        var newX = x * cr - y * sr;
+        var newY = x * sr + y * cr;
+        this.ary[this.off    ] = newX;
+        this.ary[this.off + 1] = newY;
+        return this;
+    };
+    B.Vec3.prototype.rotate = function(deg, axis) {
+        var theta = axis.theta() * (180.0 / Math.PI);
+        var phi = axis.phi() * (180.0 / Math.PI);
+        this.rotZ(-theta);
+        this.rotY(-phi);
+        this.rotZ(deg);
+        this.rotY(phi);
+        this.rotZ(theta);
+        return this;
+    };
 })();
 
 var COLORS = [

@@ -1,6 +1,12 @@
 (function() {
     B = {};
 
+    B.translate = function(x, y, z, nodes) {
+        return { type: "translate",
+                 x: x, y: y, z: z,
+                 nodes: nodes };
+    };
+
     /* Generate a geometry node of a plane divided into n rows and m columns,
      * each a unit distance apart, using indexed triangles to render.
      */
@@ -168,14 +174,12 @@ var COLORS = [
 
 var geom = B.plane(4, 4); 
 geom.colors = [];
-(function() {
-    for (var y = 0; y <= 4; y++) {
-        for (var x = 0; x <= 4; x++) {
-            var i = Math.floor(Math.random() * COLORS.length);
-            geom.colors = geom.colors.concat(COLORS[i]);
-        }
+for (var y = 0; y <= 4; y++) {
+    for (var x = 0; x <= 4; x++) {
+        var i = Math.floor(Math.random() * COLORS.length);
+        geom.colors = geom.colors.concat(COLORS[i]);
     }
-})();
+}
 
 SceneJS.createScene({
     type: "scene",
@@ -208,35 +212,26 @@ SceneJS.createScene({
                     nodes: [
                         {
                             type: "light",
-                            mode:                   "dir",
-                            color:                  { r: 1.0, g: 1.0, b: 1.0 },
-                            dir:                    { x: 0.0, y: 0.0, z: -1.0 }
+                            mode: "dir",
+                            color: { r: 1.0, g: 1.0, b: 1.0 },
+                            dir:   { x: 0.0, y: 0.0, z: -1.0 }
                         },
                         {
                             type: "rotate",
-                            id: "pitch",
+                            id: "yaw",
                             angle: 0.0,
-                            x: 1.0,
-
+                            z: 1.0,
                             nodes: [
-                                {
-                                    type: "rotate",
-                                    id: "yaw",
-                                    angle: 0.0,
-                                    z: 1.0,
-
-                                    nodes: [
-                                        {
-                                            type: "material",
-                                            baseColor:      { r: 1.0, g: 1.0, b: 1.0 },
-                                            specularColor:  { r: 0.4, g: 0.4, b: 0.4 },
-                                            specular:       0.2,
-                                            shine:          6.0,
-
-                                            nodes: [geom]
-                                        }
-                                    ]
-                                }
+                                B.translate(-2, -2, 0, [
+                                    {
+                                        type: "material",
+                                        baseColor:      { r: 1.0, g: 1.0, b: 1.0 },
+                                        specularColor:  { r: 0.4, g: 0.4, b: 0.4 },
+                                        specular:       0.2,
+                                        shine:          6.0,
+                                        nodes: [geom]
+                                    }
+                                ])
                             ]
                         }
                     ]
@@ -297,7 +292,7 @@ function actionMove(posX, posY) {
         lastX = posX;
         lastY = posY;
 
-        scene.findNode("pitch").set("angle", pitch);
+        //scene.findNode("pitch").set("angle", pitch);
         scene.findNode("yaw").set("angle", yaw);
     }
 }

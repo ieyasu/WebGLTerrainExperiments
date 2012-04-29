@@ -494,7 +494,7 @@ canvas.addEventListener('touchmove', touchMove, true);
 canvas.addEventListener('touchend', touchEnd, true);
 
 $('#terrain-demo').mousewheel(function(e, delta) {
-    camera.zoom(delta * 0.1);
+    camera.zoom(delta * -0.1);
     camera.use(scene);
 });
 $(document).keydown(function(e) {

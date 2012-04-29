@@ -1,25 +1,30 @@
 (function() {
     B = {};
 
+    /* Create a Scene.js translation node.
+     */
     B.translate = function(x, y, z, nodes) {
-        return { type: "translate",
-                 x: x, y: y, z: z,
-                 nodes: nodes };
+        return { type: "translate", x: x, y: y, z: z, nodes: nodes };
+    };
+
+    B.Terrain = function(nx, ny) {
+        this.nx = nx; this.ny = ny;
+        this.makeGeometry();
     };
 
     /* Generate a geometry node of a plane divided into n rows and m columns,
      * each a unit distance apart, using indexed triangles to render.
      */
-    B.plane = function(nx, ny) {
-        var nx1 = nx + 1, ny1 = ny + 1;
+    B.Terrain.prototype.makeGeometry = function() {
+        var nx1 = this.nx + 1, ny1 = this.ny + 1;
         var pos  = new Array(nx1 * ny1 * 3);
         var norm = new Array(nx1 * ny1 * 3);
-        var ind  = new Array(nx * ny * 6);
+        var ind  = new Array(this.nx * this.ny * 6);
         var x, y, i, rowA, rowB;
 
         i = 0;
-        for (y = 0; y <= ny; y++) {
-            for (x = 0; x <= nx; x++) {
+        for (y = 0; y <= this.ny; y++) {
+            for (x = 0; x <= this.nx; x++) {
                 pos[i    ] = x;
                 pos[i + 1] = y;
                 pos[i + 2] = -0.1;
@@ -33,10 +38,10 @@
         }
 
         i = 0;
-        for (y = 0; y < ny; y++) {
+        for (y = 0; y < this.ny; y++) {
             rowA = y * nx1;
             rowB = rowA + nx1;
-            for (x = 0; x < nx; x++) {
+            for (x = 0; x < this.nx; x++) {
                 ind[i    ] = x + rowA;
                 ind[i + 1] = x + rowA + 1;
                 ind[i + 2] = x + rowB;
@@ -49,9 +54,51 @@
             }
         }
 
-        return { type: "geometry", primitive: "triangles",
-                 positions: pos, normals: norm, indices: ind };
-    }
+        this.positions = pos;
+        this.normals = norm;
+        this.indices = ind;
+    };
+
+    B.Terrain.prototype.makeNode = function(id) {
+        return { type: "geometry", primitive: "triangles", id: id,
+                 positions: this.positions,
+                 normals: this.normals,
+                 colors: this.colors,
+                 indices: this.indices };
+    };
+
+    /* Update the given Scene.js node with current vertex positions and normals.
+     */
+    B.Terrain.prototype.updateNode = function(node) {
+        node.set("positions", {positions: this.positions});
+        node.set("normals", {normals: this.normals});
+    };
+
+    B.Terrain.prototype.reset = function() {};
+    B.Terrain.prototype.calc_normals = function() {};
+    B.Terrain.prototype.smooth = function() {};
+
+    /* Give colors to terrain vertexes.  Random for now.
+     */
+    B.Terrain.prototype.colorize = function() {
+        var x, y, i;
+        this.colors = [];
+        for (y = 0; y <= 4; y++) {
+            for (x = 0; x <= 4; x++) {
+                i = Math.floor(Math.random() * this.COLORS.length);
+                this.colors = this.colors.concat(this.COLORS[i]);
+            }
+        }
+    };
+    B.Terrain.prototype.diamond_square = function() {};
+
+    B.Terrain.prototype.COLORS = [
+        [0.35, 0.60, 0.88, 1.0], // water
+        [0.17, 0.61, 0.13, 1.0], // grass
+        [0.48, 0.31, 0.14, 1.0], // dirt
+        [0.93, 0.86, 0.98, 1.0], // snow
+        [0.40, 0.40, 0.45, 1.0]  // gray
+    ];
 
     /* 3-element vector operating on a portion of an array.
      */
@@ -164,22 +211,10 @@
     };
 })();
 
-var COLORS = [
-    [0.35, 0.60, 0.88, 1.0], // water
-    [0.17, 0.61, 0.13, 1.0], // grass
-    [0.48, 0.31, 0.14, 1.0], // dirt
-    [0.93, 0.86, 0.98, 1.0], // snow
-    [0.40, 0.40, 0.45, 1.0]  // gray
-];
 
-var geom = B.plane(4, 4); 
-geom.colors = [];
-for (var y = 0; y <= 4; y++) {
-    for (var x = 0; x <= 4; x++) {
-        var i = Math.floor(Math.random() * COLORS.length);
-        geom.colors = geom.colors.concat(COLORS[i]);
-    }
-}
+var terrain = new B.Terrain(4, 4);
+terrain.colorize();
+var geom = terrain.makeNode("terrain-node");
 
 SceneJS.createScene({
     type: "scene",
@@ -305,8 +340,6 @@ canvas.addEventListener('touchstart', touchStart, true);
 canvas.addEventListener('touchmove', touchMove, true);
 canvas.addEventListener('touchend', touchEnd, true);
 
-//var geometry = scene.findNode("my-geometry");
-
 var theta = 0.0;
 
 scene.start({
@@ -315,3 +348,10 @@ scene.start({
         theta += 0.1;
     }
 });
+
+var geom = scene.findNode("terrain-node");
+
+function touchit() {
+    terrain.positions[20] = 0.5;
+    terrain.updateNode(geom);
+}

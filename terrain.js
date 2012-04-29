@@ -7,8 +7,14 @@
         return { type: "translate", x: x, y: y, z: z, nodes: nodes };
     };
 
+
+    /* Terrain Class ---------------------------------------------------
+     *
+     */
+
     B.Terrain = function(nx, ny) {
         this.nx = nx; this.ny = ny;
+        this.nx1 = nx + 1;
         this.makeGeometry();
     };
 
@@ -59,6 +65,8 @@
         this.indices = ind;
     };
 
+    /* Returns a Scene.js geometry node for this terrain.
+     */
     B.Terrain.prototype.makeNode = function(id) {
         return { type: "geometry", primitive: "triangles", id: id,
                  positions: this.positions,
@@ -90,7 +98,29 @@
             }
         }
     };
-    B.Terrain.prototype.diamond_square = function() {};
+
+    B.Terrain.prototype.diamondSquare = function() {
+        var m = this.nx * 0.5;
+        this.setZ(0,       0,       B.r(m));
+        this.setZ(this.nx, 0,       B.r(m));
+        this.setZ(0,       this.ny, B.r(m));
+        this.setZ(this.nx, this.ny, B.r(m));
+
+        m *= 0.5;
+        var avg = (this.z(0, 0) + this.z(this.nx, 0) +
+                   this.z(0, this.ny) + this.z(this.nx, this.ny)) * 0.25 +
+            B.r(m);
+        this.setZ(this.nx / 2, this.ny / 2, avg);
+    };
+
+    B.Terrain.prototype.z = function(x, y) {
+        return this.positions[3 * (x + y * this.nx1) + 2];
+    };
+    B.Terrain.prototype.setZ = function(x, y, z) {
+        this.positions[3 * (x + y * this.nx1) + 2] = z;
+    }
+
+    B.r = function(mag) { return (Math.random() - 0.5) * mag; };
 
     B.Terrain.prototype.COLORS = [
         [0.35, 0.60, 0.88, 1.0], // water
@@ -99,6 +129,10 @@
         [0.93, 0.86, 0.98, 1.0], // snow
         [0.40, 0.40, 0.45, 1.0]  // gray
     ];
+
+
+    /* Vec3 Class ------------------------------------------------------
+     */
 
     /* 3-element vector operating on a portion of an array.
      */
@@ -352,6 +386,7 @@ scene.start({
 var geom = scene.findNode("terrain-node");
 
 function touchit() {
-    terrain.positions[20] = 0.5;
+    //terrain.positions[20] = 0.5;
+    terrain.diamondSquare();
     terrain.updateNode(geom);
 }

@@ -12,9 +12,8 @@
      *
      */
 
-    B.Terrain = function(nx, ny) {
-        this.nx = nx; this.ny = ny;
-        this.nx1 = nx + 1;
+    B.Terrain = function(size) {
+        this.S = size; this.S1 = size + 1;
         this.makeGeometry();
     };
 
@@ -22,15 +21,15 @@
      * each a unit distance apart, using indexed triangles to render.
      */
     B.Terrain.prototype.makeGeometry = function() {
-        var nx1 = this.nx + 1, ny1 = this.ny + 1;
-        var pos  = new Array(nx1 * ny1 * 3);
-        var norm = new Array(nx1 * ny1 * 3);
-        var ind  = new Array(this.nx * this.ny * 6);
+        var S1 = this.S1;
+        var pos  = new Array(S1 * S1 * 3);
+        var norm = new Array(S1 * S1 * 3);
+        var ind  = new Array(this.S * this.S * 6);
         var x, y, i, rowA, rowB;
 
         i = 0;
-        for (y = 0; y <= this.ny; y++) {
-            for (x = 0; x <= this.nx; x++) {
+        for (y = 0; y <= this.S; y++) {
+            for (x = 0; x <= this.S; x++) {
                 pos[i    ] = x;
                 pos[i + 1] = y;
                 pos[i + 2] = -0.1;
@@ -44,10 +43,10 @@
         }
 
         i = 0;
-        for (y = 0; y < this.ny; y++) {
-            rowA = y * nx1;
-            rowB = rowA + nx1;
-            for (x = 0; x < this.nx; x++) {
+        for (y = 0; y < this.S; y++) {
+            rowA = y * S1;
+            rowB = rowA + S1;
+            for (x = 0; x < this.S; x++) {
                 ind[i    ] = x + rowA;
                 ind[i + 1] = x + rowA + 1;
                 ind[i + 2] = x + rowB;
@@ -82,6 +81,18 @@
         node.set("normals", {normals: this.normals});
     };
 
+    B.Terrain.prototype.centerVertically = function() {
+        var i, n = 3 * this.S1 * this.S1, avg;
+        avg = 0.0;
+        for (i = 2; i < n; i += 3) {
+            avg += this.positions[i];
+        }
+        avg /= (this.S1 * this.S1);
+        for (i = 2; i < n; i += 3) {
+            this.positions[i] -= avg;
+        }
+    };
+
     B.Terrain.prototype.reset = function() {};
     B.Terrain.prototype.calc_normals = function() {};
     B.Terrain.prototype.smooth = function() {};
@@ -91,8 +102,8 @@
     B.Terrain.prototype.colorize = function() {
         var x, y, i;
         this.colors = [];
-        for (y = 0; y <= 4; y++) {
-            for (x = 0; x <= 4; x++) {
+        for (y = 0; y <= this.S; y++) {
+            for (x = 0; x <= this.S; x++) {
                 i = Math.floor(Math.random() * this.COLORS.length);
                 this.colors = this.colors.concat(this.COLORS[i]);
             }
@@ -100,24 +111,69 @@
     };
 
     B.Terrain.prototype.diamondSquare = function() {
-        var m = this.nx * 0.5;
-        this.setZ(0,       0,       B.r(m));
-        this.setZ(this.nx, 0,       B.r(m));
-        this.setZ(0,       this.ny, B.r(m));
-        this.setZ(this.nx, this.ny, B.r(m));
+        var x, y, m, s, s2, avg;
 
-        m *= 0.5;
-        var avg = (this.z(0, 0) + this.z(this.nx, 0) +
-                   this.z(0, this.ny) + this.z(this.nx, this.ny)) * 0.25 +
-            B.r(m);
-        this.setZ(this.nx / 2, this.ny / 2, avg);
+        // base step - set four corners
+        m = this.S * 0.8;
+        this.setZ(0,      0,      B.r(m));
+        this.setZ(this.S, 0,      B.r(m));
+        this.setZ(0,      this.S, B.r(m));
+        this.setZ(this.S, this.S, B.r(m));
+
+        for (s = this.S; s > 1; s = s2) {
+            s2 = s / 2;
+
+            m *= 0.5;
+
+            // diamond step
+            for (y = 0; y < this.S; y += s) {
+                for (x = 0; x < this.S; x += s) {
+                    // average of corner heights
+                    avg = (this.z(x, y) + this.z(x + s, y) + this.z(x, y + s) +
+                           this.z(x + s, y + s)) * 0.25;
+                    this.setZ(x + s2, y + s2, avg + B.r(m));
+                }
+            }
+
+            // square step
+            x = s2; y = 0;
+            while (y <= this.S) {
+                var xs = []
+                for (; x <= this.S; x += s) {
+                    xs = xs.concat(x);
+
+                    if (x == 0) { // left edge
+                        avg = (this.z(x, y - s2) + this.z(x, y + s2) +
+                               this.z(x + s2, y)) * 0.333;
+                    } else if (x == this.S) { // right edge
+                        avg = (this.z(x, y - s2) + this.z(x, y + s2) +
+                               this.z(x - s2, y)) * 0.333;
+                    } else if (y == 0) { // bottom edge
+                        avg = (this.z(x - s2, y) + this.z(x + s2, y) +
+                               this.z(x, y + s2)) * 0.333;
+                    } else if (y == this.S) { // top edge
+                        avg = (this.z(x - s2, y) + this.z(x + s2, y) +
+                               this.z(x, y - s2)) * 0.333;
+                    } else { // internal vertex
+                        avg = (this.z(x - s2, y) + this.z(x + s2, y) +
+                               this.z(x, y - s2) + this.z(x, y + s2)) * 0.25;
+                    }
+                    this.setZ(x, y, avg + B.r(m));
+                }
+                x = x - this.S - s2; y += s2;
+            }
+        }
     };
 
     B.Terrain.prototype.z = function(x, y) {
-        return this.positions[3 * (x + y * this.nx1) + 2];
+        if (x < 0 || x > this.S || y < 0 || y > this.S)
+            alert("z(x, y): " + x + ", ", + y);
+        return this.positions[3 * (x + y * this.S1) + 2];
     };
     B.Terrain.prototype.setZ = function(x, y, z) {
-        this.positions[3 * (x + y * this.nx1) + 2] = z;
+        if (x < 0 || x > this.S || y < 0 || y > this.S)
+            alert("setZ(x, y): " + x + ", ", + y);
+        this.positions[3 * (x + y * this.S1) + 2] = z;
     }
 
     B.r = function(mag) { return (Math.random() - 0.5) * mag; };
@@ -246,7 +302,7 @@
 })();
 
 
-var terrain = new B.Terrain(4, 4);
+var terrain = new B.Terrain(64);
 terrain.colorize();
 var geom = terrain.makeNode("terrain-node");
 
@@ -263,7 +319,7 @@ SceneJS.createScene({
     nodes: [
         {
             type: "lookAt",
-            eye: { x: 5, y: -18, z: 6 },
+            eye: { x: 0, y: -150, z: 45 },
             look: { x: 0, y: 0, z: 0 },
             up: { x: 0, y: 0, z: 1 },
 
@@ -291,7 +347,7 @@ SceneJS.createScene({
                             angle: 0.0,
                             z: 1.0,
                             nodes: [
-                                B.translate(-2, -2, 0, [
+                                B.translate(-32, -32, 0, [
                                     {
                                         type: "material",
                                         baseColor:      { r: 1.0, g: 1.0, b: 1.0 },
@@ -377,16 +433,16 @@ canvas.addEventListener('touchend', touchEnd, true);
 var theta = 0.0;
 
 scene.start({
-    idleFunc: function() {
+    /*idleFunc: function() {
         scene.findNode("yaw").set("angle", theta);
         theta += 0.1;
-    }
+    }*/
 });
 
 var geom = scene.findNode("terrain-node");
 
 function touchit() {
-    //terrain.positions[20] = 0.5;
     terrain.diamondSquare();
+    terrain.centerVertically();
     terrain.updateNode(geom);
 }

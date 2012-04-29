@@ -110,7 +110,7 @@
         }
     };
 
-    B.Terrain.prototype.diamondSquare = function() {
+    B.Terrain.prototype.diamondSquare = function(roughness) {
         var x, y, m, s, s2, avg;
 
         // base step - set four corners
@@ -123,7 +123,7 @@
         for (s = this.S; s > 1; s = s2) {
             s2 = s / 2;
 
-            m *= 0.5;
+            m *= roughness;
 
             // diamond step
             for (y = 0; y < this.S; y += s) {
@@ -310,7 +310,6 @@ SceneJS.createScene({
     type: "scene",
     id: "scene",
     canvasId: "terrain-demo",
-    loggingElementId: "log",
 
     flags: {
         //backfaces: false
@@ -442,7 +441,18 @@ scene.start({
 var geom = scene.findNode("terrain-node");
 
 function touchit() {
-    terrain.diamondSquare();
-    terrain.centerVertically();
-    terrain.updateNode(geom);
+    var s = $('#rough').val();
+    var r = parseFloat(s);
+    if (isNaN(r)) {
+        alert("Cannot convert '" + s + "' into a float");
+        $('#rough').focus();
+    } else {
+        if (r <= 0.0 || r > 1.0) {
+            r = 0.5;
+            $('#rough').val(r);
+        }
+        terrain.diamondSquare(r);
+        terrain.centerVertically();
+        terrain.updateNode(geom);
+    }
 }

@@ -299,29 +299,24 @@
         this.rotZ(theta);
         return this;
     };
-})();
 
 
-var terrain = new B.Terrain(64);
-terrain.colorize();
-var geom = terrain.makeNode("terrain-node");
+    /* Camera Class ----------------------------------------------------
+     */
 
-SceneJS.createScene({
-    type: "scene",
-    id: "scene",
-    canvasId: "terrain-demo",
+    B.Camera = function(eye) {
+        this.eye = new B.Vec3(eye, 0);
+        this.lookAt = new B.Vec3([0, 0, 0], 0);
+        this.up = new B.Vec3([0, 0, 1], 0);
+        this.right = new B.Vec3([1, 0, 0], 0);
+    };
 
-    flags: {
-        //backfaces: false
-    },
-
-    nodes: [
-        {
+    B.Camera.prototype.makeNode = function(children) {
+        return {
             type: "lookAt",
-            eye: { x: 0, y: -150, z: 45 },
-            look: { x: 0, y: 0, z: 0 },
-            up: { x: 0, y: 0, z: 1 },
-
+            eye: { x: this.eye.x(), y: this.eye.y(), z: this.eye.z() },
+            look: { x: this.lookAt.x(), y: this.lookAt.y(), z: this.lookAt.z() },
+            up: { x: this.up.x(), y: this.up.y(), z: this.up.z() },
             nodes: [
                 {
                     type: "camera",
@@ -332,37 +327,68 @@ SceneJS.createScene({
                         near: 0.10,
                         far: 300.0
                     },
-
-                    nodes: [
-                        {
-                            type: "light",
-                            mode: "dir",
-                            color: { r: 1.0, g: 1.0, b: 1.0 },
-                            dir:   { x: 0.0, y: 0.0, z: -1.0 }
-                        },
-                        {
-                            type: "rotate",
-                            id: "yaw",
-                            angle: 0.0,
-                            z: 1.0,
-                            nodes: [
-                                B.translate(-32, -32, 0, [
-                                    {
-                                        type: "material",
-                                        baseColor:      { r: 1.0, g: 1.0, b: 1.0 },
-                                        specularColor:  { r: 0.4, g: 0.4, b: 0.4 },
-                                        specular:       0.2,
-                                        shine:          6.0,
-                                        nodes: [geom]
-                                    }
-                                ])
-                            ]
-                        }
-                    ]
+                    nodes: children
                 }
             ]
+        };
+    };
+
+    B.Camera.prototype.use = function() {
+    };
+    B.Camera.prototype.goHome = function(eye) {
+        this.eye.ary = eye;
+        this.lookAt.ary = [0, 0, 0];
+        this.use();
+    };
+    B.Camera.prototype.yaw = function(deg) {
+    };
+    B.Camera.prototype.roll = function(deg) {
+    };
+    B.Camera.prototype.zoom = function(z) {
+    };
+})();
+
+var HOME = [0, -150, 45];
+
+var terrain = new B.Terrain(64);
+terrain.colorize();
+var geom = terrain.makeNode("terrain-node");
+
+var camera = new B.Camera(HOME);
+
+SceneJS.createScene({
+    type: "scene",
+    id: "scene",
+    canvasId: "terrain-demo",
+
+    flags: {
+        //backfaces: false
+    },
+
+    nodes: [ camera.makeNode([
+        {
+            type: "light",
+            mode: "dir",
+            color: { r: 1.0, g: 1.0, b: 1.0 },
+            dir:   { x: 0.0, y: 0.0, z: -1.0 }
+        },
+        {
+            type: "rotate",
+            id: "yaw",
+            angle: 0.0,
+            z: 1.0,
+            nodes: [ B.translate(-32, -32, 0, [
+                {
+                    type: "material",
+                    baseColor:      { r: 1.0, g: 1.0, b: 1.0 },
+                    specularColor:  { r: 0.4, g: 0.4, b: 0.4 },
+                    specular:       0.2,
+                    shine:          6.0,
+                    nodes: [geom]
+                }
+            ]) ]
         }
-    ]
+    ]) ]
 });
 
 var yaw = 30;

@@ -306,17 +306,20 @@
 
     B.Camera = function(eye) {
         this.eye = new B.Vec3(eye, 0);
-        this.lookAt = new B.Vec3([0, 0, 0], 0);
-        this.up = new B.Vec3([0, 0, 1], 0);
-        this.right = new B.Vec3([1, 0, 0], 0);
+        this.cen = new B.Vec3([0, 0, 0], 0);
+        this.fixUp();
+    };
+
+    B.Camera.prototype.fixUp = function() {
+        var toCen = this.cen.sub(this.eye);
+        var upZ = new B.Vec3([0, 0, 1], 0);
+        this.up = toCen.cross(upZ).cross(toCen);
     };
 
     B.Camera.prototype.makeNode = function(children) {
+        var eo = this.eyeObj(), lo = this.lookObj(), uo = this.upObj();
         return {
-            type: "lookAt",
-            eye: { x: this.eye.x(), y: this.eye.y(), z: this.eye.z() },
-            look: { x: this.lookAt.x(), y: this.lookAt.y(), z: this.lookAt.z() },
-            up: { x: this.up.x(), y: this.up.y(), z: this.up.z() },
+            type: "lookAt", id: "camera-look-at", eye: eo, look: lo, up: uo,
             nodes: [
                 {
                     type: "camera",
@@ -333,22 +336,52 @@
         };
     };
 
-    B.Camera.prototype.use = function() {
+    B.Camera.prototype.eyeObj = function() {
+        return { x: this.eye.x(), y: this.eye.y(), z: this.eye.z() };
     };
+    B.Camera.prototype.lookObj = function() {
+        return { x: this.cen.x(), y: this.cen.y(), z: this.cen.z() };
+    };
+    B.Camera.prototype.upObj = function() {
+        return { x: this.up.x(), y: this.up.y(), z: this.up.z() };
+    };
+
+    B.Camera.prototype.use = function(scene) {
+        var n = scene.findNode("camera-look-at");
+        //n.set('look', this.lookObj());
+        n.set('eye', this.eyeObj());
+        n.set('up', this.upObj());
+    };
+
     B.Camera.prototype.goHome = function(eye) {
         this.eye.ary = eye;
-        this.lookAt.ary = [0, 0, 0];
-        this.use();
+        this.cen.ary = [0, 0, 0];
+        this.fixUp();
     };
+
+    /* rotate eye around 'up' */
     B.Camera.prototype.yaw = function(deg) {
+        var toEye = this.eye.sub(this.cen);
+        this.eye = toEye.rotate(deg, this.up).add(this.cen);
     };
-    B.Camera.prototype.roll = function(deg) {
+
+    /* rotate eye around 'right' */
+    B.Camera.prototype.pitch = function(deg) {
+        var toEye = this.eye.sub(this.cen);
+        var right = toEye.cross(this.up);
+        toEye = toEye.rotate(deg, right);
+        this.up = this.up.rotate(deg, right);
+        this.eye = toEye.add(this.cen);
     };
+
     B.Camera.prototype.zoom = function(z) {
+        var toEye = this.eye.sub(this.cen);
+        toEye.mulEq(1.0 + z);
+        this.eye = toEye.add(this.cen);
     };
 })();
 
-var HOME = [0, -150, 45];
+var HOME = [0, -150, 95];
 
 var terrain = new B.Terrain(64);
 terrain.colorize();
@@ -391,10 +424,8 @@ SceneJS.createScene({
     ]) ]
 });
 
-var yaw = 30;
-var pitch = -30;
-var lastX;
-var lastY;
+var lastX = -1;
+var lastY = -1;
 var dragging = false;
 
 function mouseDown(event) {
@@ -435,15 +466,22 @@ function touchMove(event) {
  * incremented angles in each time.
  */
 function actionMove(posX, posY) {
+    var deg;
+
     if (dragging) {
-        yaw += (posX - lastX) * 0.5;
-        pitch += (posY - lastY) * 0.5;
+        if (lastX < 0) lastX = posX;
+        if (lastY < 0) lastY = posY;
+
+        deg = (lastX - posX) * 0.5;
+        camera.yaw(deg);
+
+        deg = (posY - lastY) * 0.5;
+        camera.pitch(deg);
 
         lastX = posX;
         lastY = posY;
 
-        //scene.findNode("pitch").set("angle", pitch);
-        scene.findNode("yaw").set("angle", yaw);
+        camera.use(scene);
     }
 }
 
@@ -455,8 +493,19 @@ canvas.addEventListener('touchstart', touchStart, true);
 canvas.addEventListener('touchmove', touchMove, true);
 canvas.addEventListener('touchend', touchEnd, true);
 
-var theta = 0.0;
+$('#terrain-demo').mousewheel(function(e, delta) {
+    camera.zoom(delta * 0.1);
+    camera.use(scene);
+});
+$(document).keydown(function(e) {
+    if (e.which === 36) { // home
+        camera.goHome(HOME);
+        camera.use(scene);
+        e.preventDefault();
+    }
+});
 
+var theta = 0.0;
 scene.start({
     /*idleFunc: function() {
         scene.findNode("yaw").set("angle", theta);

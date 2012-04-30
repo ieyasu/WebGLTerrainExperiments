@@ -79,6 +79,7 @@
     B.Terrain.prototype.updateNode = function(node) {
         node.set("positions", {positions: this.positions});
         node.set("normals", {normals: this.normals});
+        node.set("colors", {colors: this.colors});
     };
 
     B.Terrain.prototype.centerVertically = function() {
@@ -97,9 +98,9 @@
     B.Terrain.prototype.calc_normals = function() {};
     B.Terrain.prototype.smooth = function() {};
 
-    /* Give colors to terrain vertexes.  Random for now.
+    /* Give random colors to terrain vertexes.
      */
-    B.Terrain.prototype.colorize = function() {
+    B.Terrain.prototype.colorRandomly = function() {
         var x, y, i;
         this.colors = [];
         for (y = 0; y <= this.S; y++) {
@@ -110,11 +111,31 @@
         }
     };
 
+    B.Terrain.prototype.colorByHeight = function() {
+        var i, n = 3 * this.S1 * this.S1, ary, min, max, f, j;
+        ary = this.minMax(); min = ary[0]; max = ary[1];
+        f = (this.COLORS.length - 0.0001) / (max - min);
+        this.colors = [];
+        for (i = 2; i < n; i += 3) {
+            j = Math.floor((this.positions[i] - min) * f);
+            this.colors = this.colors.concat(this.COLORS[j]);
+        }
+    };
+
+    B.Terrain.prototype.minMax = function() {
+        var i, n = 3 * this.S1 * this.S1, min = 1e8, max = -1e8;
+        for (i = 2; i < n; i += 3) {
+            if (this.positions[i] < min) min = this.positions[i];
+            if (max < this.positions[i]) max = this.positions[i];
+        }
+        return [min, max];
+    };
+
     B.Terrain.prototype.diamondSquare = function(roughness) {
         var x, y, m, s, s2, avg;
 
         // base step - set four corners
-        m = this.S * 0.8;
+        m = this.S * roughness;
         this.setZ(0,      0,      B.r(m));
         this.setZ(this.S, 0,      B.r(m));
         this.setZ(0,      this.S, B.r(m));
@@ -384,7 +405,7 @@
 var HOME = [0, -150, 95];
 
 var terrain = new B.Terrain(64);
-terrain.colorize();
+terrain.colorRandomly();
 var geom = terrain.makeNode("terrain-node");
 
 var camera = new B.Camera(HOME);
@@ -530,4 +551,9 @@ function touchit() {
         terrain.centerVertically();
         terrain.updateNode(geom);
     }
+}
+
+function color() {
+    terrain.colorByHeight();
+    terrain.updateNode(geom);
 }

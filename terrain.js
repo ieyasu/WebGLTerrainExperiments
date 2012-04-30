@@ -77,6 +77,7 @@
     /* Update the given Scene.js node with current vertex positions and normals.
      */
     B.Terrain.prototype.updateNode = function(node) {
+        this.calcNormals();
         node.set("positions", {positions: this.positions});
         node.set("normals", {normals: this.normals});
         node.set("colors", {colors: this.colors});
@@ -95,7 +96,72 @@
     };
 
     B.Terrain.prototype.reset = function() {};
-    B.Terrain.prototype.calc_normals = function() {};
+
+    B.Terrain.prototype.calcNormals = function() {
+        var x, y, v1, v2, v3, v4;
+        for (y = 0; y <= this.S; y++) {
+            for (x = 0; x <= this.S; x++) {
+                if (x == 0) { // left side
+                    if (y == 0) { // bottom left corner
+                        v1 = this.surfaceVector(0, 0, 1, 0); // right
+                        v2 = this.surfaceVector(0, 0, 0, 1); // up
+                        this.setNormal(x, y, v1.cross(v2));
+                    } else if (y == this.S) { // top left corner
+                        v1 = this.surfaceVector(0, y, 0, y - 1); // down
+                        v2 = this.surfaceVector(0, y, 1, y); // right
+                        this.setNormal(x, y, v1.cross(v2));
+                    } else { // other left side
+                        v1 = this.surfaceVector(0, y, 0, y - 1); // down
+                        v2 = this.surfaceVector(0, y, 1, y); // right
+                        v3 = this.surfaceVector(0, y, 0, y + 1); // up
+                        this.setNormal(x, y, v1.cross(v2).add(v2.cross(v3)));
+                    }
+                } else if (x == this.S) { // right side
+                    if (y == 0) { // bottom right corner
+                        v1 = this.surfaceVector(x, 0, x, 1); // up
+                        v2 = this.surfaceVector(x, 0, x - 1, 0); // left
+                        this.setNormal(x, y, v1.cross(v2));
+                    } else if (y == this.S) { // top right corner
+                        v1 = this.surfaceVector(x, y, x - 1, y); // left
+                        v2 = this.surfaceVector(x, y, x, y - 1); // down
+                        this.setNormal(x, y, v1.cross(v2));
+                    } else { // other right side
+                        v1 = this.surfaceVector(x, y, x, y + 1); // up
+                        v2 = this.surfaceVector(x, y, x - 1, y); // left
+                        v3 = this.surfaceVector(x, y, x, y - 1); // down
+                        this.setNormal(x, y, v1.cross(v2).add(v2.cross(v3)));
+                    }
+                } else if (y == 0) { // bottom side
+                    v1 = this.surfaceVector(x, 0, x + 1, 0); // right
+                    v2 = this.surfaceVector(x, 0, x, 1); // up
+                    v3 = this.surfaceVector(x, 0, x - 1, 0); // left
+                    this.setNormal(x, y, v1.cross(v2).add(v2.cross(v3)));
+                } else if (y == this.S) { // top side
+                    v1 = this.surfaceVector(x, y, x - 1, y); // left
+                    v2 = this.surfaceVector(x, y, x, y - 1); // down
+                    v3 = this.surfaceVector(x, y, x + 1, y); // right
+                    this.setNormal(x, y, v1.cross(v2).add(v2.cross(v3)));
+                } else { // interior vertex
+                    v1 = this.surfaceVector(x, y, x + 1, y); // right
+                    v2 = this.surfaceVector(x, y, x, y + 1); // up
+                    v3 = this.surfaceVector(x, y, x - 1, y); // left
+                    v4 = this.surfaceVector(x, y, x, y - 1); // down
+                    this.setNormal(x, y, v1.cross(v2).add(v2.cross(v3)).
+                                   add(v3.cross(v4)).add(v4.cross(v1)));
+                }
+            }
+        }
+    };
+
+    B.Terrain.prototype.surfaceVector = function(fromX, fromY, toX, toY) {
+        var o, to, from;
+        o = this.offset(toX, toY);
+        to = new B.Vec3(this.positions.slice(o, o + 3));
+        o = this.offset(fromX, fromY);
+        from = new B.Vec3(this.positions.slice(o, o + 3));
+        return to.sub(from);
+    };
+
     B.Terrain.prototype.smooth = function() {};
 
     /* Give random colors to terrain vertexes.
@@ -186,16 +252,29 @@
         }
     };
 
+    /* Offset to x,y position in 3-part array.
+     */
+    B.Terrain.prototype.offset = function(x, y) {
+        return 3 * (x + y * this.S1);
+    };
+
     B.Terrain.prototype.z = function(x, y) {
-        if (x < 0 || x > this.S || y < 0 || y > this.S)
-            alert("z(x, y): " + x + ", ", + y);
+        //if (x < 0 || x > this.S || y < 0 || y > this.S)
+        //    alert("z(x, y): " + x + ", ", + y);
         return this.positions[3 * (x + y * this.S1) + 2];
     };
     B.Terrain.prototype.setZ = function(x, y, z) {
-        if (x < 0 || x > this.S || y < 0 || y > this.S)
-            alert("setZ(x, y): " + x + ", ", + y);
+        //if (x < 0 || x > this.S || y < 0 || y > this.S)
+        //    alert("setZ(x, y): " + x + ", ", + y);
         this.positions[3 * (x + y * this.S1) + 2] = z;
     }
+
+    B.Terrain.prototype.setNormal = function(x, y, vec) {
+        //if (x < 0 || x > this.S || y < 0 || y > this.S)
+        //    alert("setNormal(x, y): " + x + ", ", + y);
+        vec.normalize();
+        this.normals.splice(3 * (x + y * this.S1), 3, vec.x(), vec.y(), vec.z());
+    };
 
     B.r = function(mag) { return (Math.random() - 0.5) * mag; };
 

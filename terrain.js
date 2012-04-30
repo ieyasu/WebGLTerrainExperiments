@@ -213,44 +213,38 @@
 
     /* 3-element vector operating on a portion of an array.
      */
-    B.Vec3 = function(ary, offset) {
-        this.ary = ary;
-        this.off = offset;
+    B.Vec3 = function(ary) {
+        this.ary = (ary === undefined) ? [0, 0, 0] : ary;
     };
-    B.Vec3.prototype.x = function() { return this.ary[this.off]; }
-    B.Vec3.prototype.y = function() { return this.ary[this.off + 1]; }
-    B.Vec3.prototype.z = function() { return this.ary[this.off + 2]; }
+    B.Vec3.prototype.x = function() { return this.ary[0]; }
+    B.Vec3.prototype.y = function() { return this.ary[1]; }
+    B.Vec3.prototype.z = function() { return this.ary[2]; }
+
     B.Vec3.prototype.add = function(v) {
-        return new B.Vec3([this.x() + v.x(),
-                           this.y() + v.y(),
-                           this.z() + v.z()], 0);
+        return new B.Vec3([this.x() + v.x(), this.y() + v.y(), this.z() + v.z()]);
     };
     B.Vec3.prototype.sub = function(v) {
-        return new B.Vec3([this.x() - v.x(),
-                           this.y() - v.y(),
-                           this.z() - v.z()], 0);
+        return new B.Vec3([this.x() - v.x(), this.y() - v.y(), this.z() - v.z()]);
     };
     B.Vec3.prototype.mul = function(f) {
-        return new B.Vec3([this.x() * f,
-                           this.y() * f,
-                           this.z() * f], 0);
+        return new B.Vec3([this.x() * f, this.y() * f, this.z() * f]);
     };
     B.Vec3.prototype.addEq = function(v) {
-        this.ary[this.off    ] += v.x();
-        this.ary[this.off + 1] += v.y();
-        this.ary[this.off + 2] += v.z();
+        this.ary[0] += v.x();
+        this.ary[1] += v.y();
+        this.ary[2] += v.z();
         return this;
     };
     B.Vec3.prototype.subEq = function(v) {
-        this.ary[this.off    ] -= v.x();
-        this.ary[this.off + 1] -= v.y();
-        this.ary[this.off + 2] -= v.z();
+        this.ary[0] -= v.x();
+        this.ary[1] -= v.y();
+        this.ary[2] -= v.z();
         return this;
     };
     B.Vec3.prototype.mulEq = function(f) {
-        this.ary[this.off    ] *= f;
-        this.ary[this.off + 1] *= f;
-        this.ary[this.off + 2] *= f;
+        this.ary[0] *= f;
+        this.ary[1] *= f;
+        this.ary[2] *= f;
         return this;
     };
 
@@ -271,7 +265,7 @@
     B.Vec3.prototype.cross = function(v) {
         return new B.Vec3([this.y() * v.z() - this.z() * v.y(),
                            this.z() * v.x() - this.x() * v.z(),
-                           this.x() * v.y() - this.y() * v.x()], 0);
+                           this.x() * v.y() - this.y() * v.x()]);
     };
 
     B.Vec3.prototype.rho = B.Vec3.prototype.magnitude;
@@ -288,8 +282,8 @@
         var y = this.y(), z = this.z(), cr = Math.cos(rad), sr = Math.sin(rad);
         var newY = y * cr - z * sr;
         var newZ = y * sr + z * cr;
-        this.ary[this.off + 1] = newY;
-        this.ary[this.off + 2] = newZ;
+        this.ary[1] = newY;
+        this.ary[2] = newZ;
         return this;
     };
     B.Vec3.prototype.rotY = function(deg) {
@@ -297,8 +291,8 @@
         var x = this.x(), z = this.z(), cr = Math.cos(rad), sr = Math.sin(rad);
         var newX = z * sr + x * cr;
         var newZ = z * cr - x * sr;
-        this.ary[this.off    ] = newX;
-        this.ary[this.off + 2] = newZ;
+        this.ary[0] = newX;
+        this.ary[2] = newZ;
         return this;
     };
     B.Vec3.prototype.rotZ = function(deg) {
@@ -306,8 +300,8 @@
         var x = this.x(), y = this.y(), cr = Math.cos(rad), sr = Math.sin(rad);
         var newX = x * cr - y * sr;
         var newY = x * sr + y * cr;
-        this.ary[this.off    ] = newX;
-        this.ary[this.off + 1] = newY;
+        this.ary[0] = newX;
+        this.ary[1] = newY;
         return this;
     };
     B.Vec3.prototype.rotate = function(deg, axis) {
@@ -326,14 +320,14 @@
      */
 
     B.Camera = function(eye) {
-        this.eye = new B.Vec3(eye, 0);
-        this.cen = new B.Vec3([0, 0, 0], 0);
+        this.eye = new B.Vec3(eye);
+        this.cen = new B.Vec3([0, 0, 0]);
         this.fixUp();
     };
 
     B.Camera.prototype.fixUp = function() {
         var toCen = this.cen.sub(this.eye);
-        var upZ = new B.Vec3([0, 0, 1], 0);
+        var upZ = new B.Vec3([0, 0, 1]);
         this.up = toCen.cross(upZ).cross(toCen);
     };
 

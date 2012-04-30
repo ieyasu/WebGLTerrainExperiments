@@ -95,7 +95,12 @@
         }
     };
 
-    B.Terrain.prototype.reset = function() {};
+    B.Terrain.prototype.reset = function() {
+        var i, n = 3 * this.S1 * this.S1, avg;
+        for (i = 2; i < n; i += 3) {
+            this.positions[i] = 0;
+        }
+    };
 
     B.Terrain.prototype.calcNormals = function() {
         var x, y, v1, v2, v3, v4;
@@ -162,7 +167,69 @@
         return to.sub(from);
     };
 
-    B.Terrain.prototype.smooth = function() {};
+    B.Terrain.prototype.smooth = function(ratio, iterations) {
+        var smoothZ = new Array(this.S1 * this.S1);
+        var x, y, n, ri = 1.0 - ratio;
+        var i, j, m = 3 * this.S1 * this.S1;
+        var r2 = ratio / 2, r3 = ratio / 3, r4 = ratio / 4;
+
+        for (n = 0; n < iterations; n++) {
+            // smooth into smoothZ array
+            for (y = 0; y <= this.S; y++) {
+                i = y * this.S1;
+                for (x = 0; x <= this.S; x++, i++) {
+                    if (x == 0) { // left side
+                        if (y == 0) { // bottom left corner
+                            smoothZ[i] = this.z(x, y) * ri +
+                                (this.z(x + 1, y) + this.z(x, y + 1)) * r2;
+                        } else if (y == this.S) { // top left corner
+                            smoothZ[i] = this.z(x, y) * ri +
+                                (this.z(x + 1, y) + this.z(x, y - 1)) * r2;
+                        } else { // other left side
+                            smoothZ[i] = this.z(x, y) * ri +
+                                (this.z(x, y + 1) +
+                                 this.z(x, y - 1) +
+                                 this.z(x + 1, y)) * r3;
+                        }
+                    } else if (x == this.S) { // right side
+                        if (y == 0) { // bottom right corner
+                            smoothZ[i] = this.z(x, y) * ri +
+                                (this.z(x - 1, y) + this.z(x, y + 1)) * r2;
+                        } else if (y == this.S) { // top right corner
+                            smoothZ[i] = this.z(x, y) * ri +
+                                (this.z(x - 1, y) + this.z(x, y - 1)) * r2;
+                        } else { // other right side
+                            smoothZ[i] = this.z(x, y) * ri +
+                                (this.z(x, y + 1) +
+                                 this.z(x, y - 1) +
+                                 this.z(x - 1, y)) * r3;
+                        }
+                    } else if (y == 0) { // bottom side
+                        smoothZ[i] = this.z(x, y) * ri +
+                            (this.z(x - 1, y) +
+                             this.z(x + 1, y) +
+                             this.z(x, y + 1)) * r3;
+                    } else if (y == this.S) { // top side
+                        smoothZ[i] = this.z(x, y) * ri +
+                            (this.z(x - 1, y) +
+                             this.z(x + 1, y) +
+                             this.z(x, y - 1)) * r3;
+                    } else { // interior vertex
+                        smoothZ[i] = this.z(x, y) * ri +
+                            (this.z(x + 1, y) +
+                             this.z(x - 1, y) +
+                             this.z(x, y + 1) +
+                             this.z(x, y - 1)) * r4;
+                    }
+                }
+            }
+
+            // blast smoothed Zs into positions array
+            for (i = 2, j = 0; i < m; i += 3, j++) {
+                this.positions[i] = smoothZ[j];
+            }
+        }
+    };
 
     /* Give random colors to terrain vertexes.
      */

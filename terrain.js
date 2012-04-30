@@ -492,8 +492,8 @@
                         type: "perspective",
                         fovy: 25.0,
                         aspect: (800 / 600),
-                        near: 0.10,
-                        far: 300.0
+                        near: 1.0,
+                        far: 1000.0
                     },
                     nodes: children
                 }
@@ -546,9 +546,9 @@
     };
 })();
 
-var HOME = [0, -150, 95];
+var HOME = [-50, -300, 200];
 
-var terrain = new B.Terrain(64);
+var terrain = new B.Terrain(128);
 terrain.colorRandomly();
 var geom = terrain.makeNode("terrain-node");
 
@@ -575,7 +575,7 @@ SceneJS.createScene({
             id: "yaw",
             angle: 0.0,
             z: 1.0,
-            nodes: [ B.translate(-32, -32, 0, [
+            nodes: [ B.translate(-64, -64, 0, [
                 {
                     type: "material",
                     baseColor:      { r: 1.0, g: 1.0, b: 1.0 },
@@ -678,19 +678,29 @@ scene.start({
     }*/
 });
 
+function floatInput(thing, min, max) {
+    var s = $(thing).val();
+    var f = parseFloat(s);
+    if (isNaN(f)) {
+        alert("Cannot convert '" + s + "' into a float");
+        $(thing).focus();
+        return NaN;
+    }
+    if (min !== undefined && f < min) {
+        f = min;
+        $(thing).val(f);
+    } else if (max !== undefined && f > max) {
+        f = max;
+        $(thing).val(f);
+    }
+    return f;
+}
+
 var geom = scene.findNode("terrain-node");
 
-function touchit() {
-    var s = $('#rough').val();
-    var r = parseFloat(s);
-    if (isNaN(r)) {
-        alert("Cannot convert '" + s + "' into a float");
-        $('#rough').focus();
-    } else {
-        if (r <= 0.0 || r > 1.0) {
-            r = 0.5;
-            $('#rough').val(r);
-        }
+function diamondSquare() {
+    var r = floatInput('#rough', 0.0001, 1.0);
+    if (!isNaN(r)) {
         terrain.diamondSquare(r);
         terrain.centerVertically();
         terrain.updateNode(geom);
@@ -699,5 +709,29 @@ function touchit() {
 
 function color() {
     terrain.colorByHeight();
+    terrain.updateNode(geom);
+}
+
+function reset() {
+    terrain.reset();
+    terrain.updateNode(geom);
+}
+
+function smooth() {
+    var ratio = floatInput('#smooth_ratio', 0.01, 0.99)
+    if (!isNaN(ratio)) {
+        var iterations = floatInput('#smooth_iterations', 1, 1000);
+        if (!isNaN(iterations)) {
+            terrain.smooth(ratio, iterations);
+            terrain.updateNode(geom);
+        }
+    }
+}
+
+function preset1() {
+    terrain.diamondSquare(0.6);
+    terrain.centerVertically();
+    terrain.colorByHeight();
+    terrain.smooth(0.2, 10);
     terrain.updateNode(geom);
 }

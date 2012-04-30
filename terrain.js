@@ -234,12 +234,16 @@
     /* Give random colors to terrain vertexes.
      */
     B.Terrain.prototype.colorRandomly = function() {
-        var x, y, i;
-        this.colors = [];
+        var x, y, i, j;
+        this.colors = new Array(4 * this.S1 * this.S1);
+        j = 0;
         for (y = 0; y <= this.S; y++) {
             for (x = 0; x <= this.S; x++) {
                 i = Math.floor(Math.random() * this.COLORS.length);
-                this.colors = this.colors.concat(this.COLORS[i]);
+                this.colors[j++] = this.COLORS[i][0];
+                this.colors[j++] = this.COLORS[i][1];
+                this.colors[j++] = this.COLORS[i][2];
+                this.colors[j++] = this.COLORS[i][3];
             }
         }
     };

@@ -178,13 +178,17 @@
     };
 
     B.Terrain.prototype.colorByHeight = function() {
-        var i, n = 3 * this.S1 * this.S1, ary, min, max, f, j;
+        var i, j, n = 4 * this.S1 * this.S1;
+        var ary, min, max, f, k;
         ary = this.minMax(); min = ary[0]; max = ary[1];
         f = (this.COLORS.length - 0.0001) / (max - min);
-        this.colors = [];
-        for (i = 2; i < n; i += 3) {
-            j = Math.floor((this.positions[i] - min) * f);
-            this.colors = this.colors.concat(this.COLORS[j]);
+        this.colors = new Array(n);
+        for (i = 2, j = 0; j < n; i += 3, j += 4) {
+            k = Math.floor((this.positions[i] - min) * f);
+            this.colors[j    ] = this.COLORS[k][0];
+            this.colors[j + 1] = this.COLORS[k][1];
+            this.colors[j + 2] = this.COLORS[k][2];
+            this.colors[j + 3] = this.COLORS[k][3];
         }
     };
 

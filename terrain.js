@@ -300,10 +300,7 @@
             // square step
             x = s2; y = 0;
             while (y <= this.S) {
-                var xs = []
                 for (; x <= this.S; x += s) {
-                    xs = xs.concat(x);
-
                     if (x == 0) { // left edge
                         avg = (this.z(x, y - s2) + this.z(x, y + s2) +
                                this.z(x + s2, y)) * 0.333;

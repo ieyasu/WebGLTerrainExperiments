@@ -379,6 +379,21 @@
         }
     };
 
+    B.Terrain.prototype.particleDeposition = function(iterations, size) {
+        var i, x = B.ir2(this.S1), y = B.ir2(this.S1);
+        for (i = 0; i < iterations; i++) {
+            this.addZ(x, y, size);
+            switch (B.ir2(5)) {
+            case 0: x++; break;
+            case 1: x--; break;
+            case 2: y++; break;
+            case 3: y--; break;
+            }
+            if (x < 0) x += this.S; else if (x > this.S) x -= this.S;
+            if (y < 0) y += this.S; else if (y > this.S) y -= this.S;
+        }
+    };
+
     /* Offset to x,y position in 3-part array.
      */
     B.Terrain.prototype.offset = function(x, y) {
@@ -414,6 +429,7 @@
     B.r2 = function(mag) { return Math.random() * mag; };
     B.r3 = function(min, max) { return min + Math.random() * (max - min); };
 
+    B.ir  = function(mag) { return Math.floor((Math.random() - 0.5) * mag); };
     B.ir2 = function(mag) { return Math.floor(Math.random() * mag); };
 
     B.Terrain.prototype.COLORS = [
@@ -803,6 +819,17 @@ function reset() {
     terrain.reset();
     terrain.updateNode(geom);
 }
+
+function depositParticles() {
+    var iterations = floatInput('#particle_iterations', 1, 1e16);
+    if (!isNaN(iterations)) {
+        var size = floatInput('#particle_size', 0.0001, 100.0);
+        if (!isNaN(size)) {
+            terrain.particleDeposition(iterations, size);
+            terrain.updateNode(geom);
+        }
+    }
+};
 
 function smooth() {
     var ratio = floatInput('#smooth_ratio', 0.01, 0.99)

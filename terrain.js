@@ -77,6 +77,7 @@
     /* Update the given Scene.js node with current vertex positions and normals.
      */
     B.Terrain.prototype.updateNode = function(node) {
+        this.centerVertically();
         this.calcNormals();
         node.set("positions", {positions: this.positions});
         node.set("normals", {normals: this.normals});
@@ -324,6 +325,60 @@
         }
     };
 
+    B.Terrain.prototype.waves = function() {
+        var i, n, s, x, y, z1, z2, ax, ay, fx, fy, kx, ky;
+        s = this.S1;
+        n = 1;
+        while (s > 1) {
+            for (i = 0; i < n; i++) {
+                ax = s * B.r3(0.05, 0.1);
+                fx = 2 * Math.PI / (B.r3(15, 30) * ax);
+                kx = B.r(2 * Math.PI);
+
+                ay = s * B.r3(0.05, 0.1);
+                fy = 2 * Math.PI / (B.r3(15, 30) * ay);
+                ky = B.r(2 * Math.PI);
+
+                for (y = 0; y <= this.S; y++) {
+                    z1 = ay * Math.sin(fy * y + ky);
+
+                    for (x = 0; x <= this.S; x++) {
+                        z2 = ax * Math.sin(fx * x + kx);
+                        this.addZ(x, y, z1 + z2);
+                    }
+                }
+            }
+            n *= 2;
+            s *= 0.35;
+        }
+    };
+
+    B.Terrain.prototype.bumps = function(iterations, scale, maxRad) {
+        var i, cx, cy, r;
+        for (i = 0; i < iterations; i++) {
+            this.bump(B.ir2(this.S1), B.ir2(this.S1), B.ir2(maxRad), scale);
+            this.bump(B.ir2(this.S1), B.ir2(this.S1), B.ir2(maxRad), -scale);
+        }
+    };
+
+    B.Terrain.prototype.bump = function(cx, cy, r, k) {
+        var begX, begY, endX, endY, x, y, dx, dy, r2;
+        begX = cx - r; if (begX < 0) begX = 0;
+        begY = cy - r; if (begY < 0) begY = 0;
+        endX = cx + r; if (endX > this.S) endX = this.S;
+        endY = cy + r; if (endY > this.S) endY = this.S;
+        r2 = r * r;
+        for (y = begY; y <= endY; y++) {
+            dy2 = (cy - y) * (cy - y);
+            for (x = begX; x <= endX; x++) {
+                dx = cx - x;
+                z = Math.sqrt(r2 - dx * dx - dy2);
+                if (z > 0.0)
+                    this.addZ(x, y, z * k);
+            }
+        }
+    };
+
     /* Offset to x,y position in 3-part array.
      */
     B.Terrain.prototype.offset = function(x, y) {
@@ -335,10 +390,17 @@
         //    alert("z(x, y): " + x + ", ", + y);
         return this.positions[3 * (x + y * this.S1) + 2];
     };
+
     B.Terrain.prototype.setZ = function(x, y, z) {
         //if (x < 0 || x > this.S || y < 0 || y > this.S)
         //    alert("setZ(x, y): " + x + ", ", + y);
         this.positions[3 * (x + y * this.S1) + 2] = z;
+    }
+
+    B.Terrain.prototype.addZ = function(x, y, deltaZ) {
+        //if (x < 0 || x > this.S || y < 0 || y > this.S)
+        //    alert("deltaZ(x, y): " + x + ", ", + y);
+        this.positions[3 * (x + y * this.S1) + 2] += deltaZ;
     }
 
     B.Terrain.prototype.setNormal = function(x, y, vec) {
@@ -348,7 +410,11 @@
         this.normals.splice(3 * (x + y * this.S1), 3, vec.x(), vec.y(), vec.z());
     };
 
-    B.r = function(mag) { return (Math.random() - 0.5) * mag; };
+    B.r  = function(mag) { return (Math.random() - 0.5) * mag; };
+    B.r2 = function(mag) { return Math.random() * mag; };
+    B.r3 = function(min, max) { return min + Math.random() * (max - min); };
+
+    B.ir2 = function(mag) { return Math.floor(Math.random() * mag); };
 
     B.Terrain.prototype.COLORS = [
         [0.35, 0.60, 0.88, 1.0], // water
@@ -703,8 +769,28 @@ function diamondSquare() {
     var r = floatInput('#rough', 0.0001, 1.0);
     if (!isNaN(r)) {
         terrain.diamondSquare(r);
-        terrain.centerVertically();
         terrain.updateNode(geom);
+    }
+}
+
+function waves() {
+    terrain.reset();
+    terrain.waves();
+    terrain.updateNode(geom);
+}
+
+function bumps() {
+    var iterations = floatInput('#bump_iterations', 1, 100000);
+    if (!isNaN(iterations)) {
+        var scale = floatInput('#bump_scale', 0.0001, 10.0);
+        if (!isNaN(scale)) {
+            var maxRad = floatInput('#bump_rad', 1, 1000);
+            if (!isNaN(maxRad)) {
+                terrain.reset();
+                terrain.bumps(iterations, scale, maxRad);
+                terrain.updateNode(geom);
+            }
+        }
     }
 }
 
@@ -731,8 +817,15 @@ function smooth() {
 
 function preset1() {
     terrain.diamondSquare(0.6);
-    terrain.centerVertically();
     terrain.colorByHeight();
     terrain.smooth(0.2, 10);
+    terrain.updateNode(geom);
+}
+
+function preset2() {
+    terrain.reset();
+    terrain.bumps(500, 0.023, 64);
+    terrain.colorByHeight();
+    terrain.smooth(0.25, 8);
     terrain.updateNode(geom);
 }

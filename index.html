@@ -13,23 +13,44 @@
             style="border: 1px solid black; background-color: white">
     </canvas>
     <div>
-      <label for="rough">roughness:</label>
-      <input id="rough" name="rough" type="text" size="5" value="0.5" />
-      &nbsp;
-      <a href="javascript:diamondSquare();">Diamond-Square</a>
-      &nbsp;
-      <a href="javascript:color();">Color by height</a>
-      &nbsp;
-      <a href="javascript:reset();">Reset height</a>
-      <br />
-      <label for="smooth_ratio">ratio:</label>
-      <input id="smooth_ratio" name="smooth_ratio" type="text" size="5" value="0.3" />
-      &nbsp;
-      <label for="smooth_iterations">iterations:</label>
-      <input id="smooth_iterations" name="smooth_iterations" type="text" size="4" value="5" />
-      <a href="javascript:smooth();">smooth</a>
-      <br />
-      <a href="javascript:preset1();">Preset1</a>
+      <p>
+        <a href="javascript:color();">Color by height</a>
+        &nbsp;
+        <a href="javascript:reset();">Reset height</a>
+        &nbsp; | &nbsp;
+        <a href="javascript:preset1();">Preset1</a>
+        &nbsp;
+        <a href="javascript:preset2();">Preset2</a>
+        &nbsp; | &nbsp;
+        <a href="javascript:waves();">Waves</a>
+      </p>
+      <p>
+        <label for="rough">roughness:</label>
+        <input id="rough" name="rough" type="text" size="5" value="0.5" />
+        &nbsp;
+        <a href="javascript:diamondSquare();">Diamond-Square</a>
+      </p>
+      <p>
+        <label for="bump_iterations">iterations:</label>
+        <input id="bump_iterations" name="bump_iterations" type="text" size="5" value="300" />
+        &nbsp;
+        <label for="bump_scale">scale:</label>
+        <input id="bump_scale" name="bump_scale" type="text" size="5" value="0.2" />
+        &nbsp;
+        <label for="bump_rad">max radius:</label>
+        <input id="bump_rad" name="bump_rad" type="text" size="5" value="20" />
+        &nbsp;
+        <a href="javascript:bumps();">Bumps</a>
+      </p>
+      <p>
+        <label for="smooth_iterations">iterations:</label>
+        <input id="smooth_iterations" name="smooth_iterations" type="text" size="4" value="5" />
+        &nbsp;
+        <label for="smooth_ratio">ratio:</label>
+        <input id="smooth_ratio" name="smooth_ratio" type="text" size="5" value="0.3" />
+        &nbsp;
+        <a href="javascript:smooth();">Smooth</a>
+      </p>
     </div>
     <script src="terrain.js"></script>
   </body>

@@ -744,6 +744,7 @@ canvas.addEventListener('touchend', touchEnd, true);
 $('#terrain-demo').mousewheel(function(e, delta) {
     camera.zoom(delta * -0.1);
     camera.use(scene);
+    return false; // cancel the window scroll if the mouse is in the canvas
 });
 $(document).keydown(function(e) {
     if (e.which === 36) { // home
